@@ -2,7 +2,7 @@
 
 | Contract Name         | Address                                   | ABI file name                                      |
 | ----------------------|-------------------------------------------|--------------------------------------------------- |
-| FSCValidatorSet       |0x0000000000000000000000000000000000001000 | [fscvalidatorset](bscvalidatorset.abi)             |
+| FSCValidatorSet       |0x0000000000000000000000000000000000001000 | [fscvalidatorset](fscvalidatorset.abi)             |
 | SlashIndicator        |0x0000000000000000000000000000000000001001 | [slashindicator](slashindicator.abi)               |
 | SystemReward          |0x0000000000000000000000000000000000001002 | [systemreward](systemreward.abi)               |
 | TendermintLightClient |0x0000000000000000000000000000000000001003 | [tendermintlightclient](tendermintlightclient.abi) |
