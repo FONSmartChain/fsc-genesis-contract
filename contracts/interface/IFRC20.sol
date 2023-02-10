@@ -1,6 +1,6 @@
 pragma solidity 0.6.4;
 
-interface IBEP20 {
+interface IFRC20 {
     /**
      * @dev Returns the amount of tokens in existence.
      */
@@ -22,7 +22,7 @@ interface IBEP20 {
     function name() external view returns (string memory);
 
     /**
-     * @dev Returns the bep token owner.
+     * @dev Returns the frc token owner.
      */
     function getOwner() external view returns (address);
 

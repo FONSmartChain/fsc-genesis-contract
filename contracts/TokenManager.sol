@@ -1,16 +1,16 @@
 pragma solidity 0.6.4;
 
-import "./interface/IBEP20.sol";
+import "./interface/IFRC20.sol";
 import "./interface/ITokenHub.sol";
 import "./interface/IApplication.sol";
 import "./interface/ICrossChain.sol";
-import "./interface/IParamSubscriber.sol";
+import "./interface/IParamSuFSCriber.sol";
 import "./lib/SafeMath.sol";
 import "./lib/RLPEncode.sol";
 import "./lib/RLPDecode.sol";
 import "./System.sol";
 
-contract TokenManager is System, IApplication, IParamSubscriber {
+contract TokenManager is System, IApplication, IParamSuFSCriber {
 
   using SafeMath for uint256;
 
@@ -20,59 +20,59 @@ contract TokenManager is System, IApplication, IParamSubscriber {
   using RLPDecode for RLPDecode.RLPItem;
   using RLPDecode for RLPDecode.Iterator;
 
-  // BC to BSC
+  // BC to FSC
   struct BindSynPackage {
     uint8   packageType;
-    bytes32 bep2TokenSymbol;
+    bytes32 FRC2TokenSymbol;
     address contractAddr;
     uint256 totalSupply;
     uint256 peggyAmount;
-    uint8   bep20Decimals;
+    uint8   FRC20Decimals;
     uint64  expireTime;
   }
 
-  // BSC to BC
+  // FSC to BC
   struct ReactBindSynPackage {
     uint32 status;
-    bytes32 bep2TokenSymbol;
+    bytes32 FRC2TokenSymbol;
   }
 
-  // BSC to BC
+  // FSC to BC
   struct MirrorSynPackage {
     address mirrorSender;
-    address bep20Addr;
-    bytes32 bep20Name;
-    bytes32 bep20Symbol;
-    uint256 bep20Supply;
-    uint8   bep20Decimals;
+    address FRC20Addr;
+    bytes32 FRC20Name;
+    bytes32 FRC20Symbol;
+    uint256 FRC20Supply;
+    uint8   FRC20Decimals;
     uint256 mirrorFee;
     uint64  expireTime;
   }
 
-  // BC to BSC
+  // BC to FSC
   struct MirrorAckPackage {
     address mirrorSender;
-    address bep20Addr;
-    uint8  bep20Decimals;
-    bytes32 bep2Symbol;
+    address FRC20Addr;
+    uint8  FRC20Decimals;
+    bytes32 FRC2Symbol;
     uint256 mirrorFee;
     uint8   errorCode;
   }
 
-  // BSC to BC
+  // FSC to BC
   struct SyncSynPackage {
     address syncSender;
-    address bep20Addr;
-    bytes32 bep2Symbol;
-    uint256 bep20Supply;
+    address FRC20Addr;
+    bytes32 FRC2Symbol;
+    uint256 FRC20Supply;
     uint256 syncFee;
     uint64  expireTime;
   }
 
-  // BC to BSC
+  // BC to FSC
   struct SyncAckPackage {
     address syncSender;
-    address bep20Addr;
+    address FRC20Addr;
     uint256 syncFee;
     uint8   errorCode;
   }
@@ -91,20 +91,20 @@ contract TokenManager is System, IApplication, IParamSubscriber {
 
   uint8 constant public MIRROR_CHANNELID = 0x04;
   uint8 constant public SYNC_CHANNELID = 0x05;
-  uint8 constant public BEP2_TOKEN_DECIMALS = 8;
+  uint8 constant public FRC2_TOKEN_DECIMALS = 8;
   uint256 constant public MAX_GAS_FOR_TRANSFER_BNB=10000;
-  uint256 constant public MAX_BEP2_TOTAL_SUPPLY = 9000000000000000000;
+  uint256 constant public MAX_FRC2_TOTAL_SUPPLY = 9000000000000000000;
   uint256 constant public LOG_MAX_UINT256 = 77;
   // mirror status
   uint8 constant public   MIRROR_STATUS_TIMEOUT = 1;
-  uint8 constant public   MIRROR_STATUS_DUPLICATED_BEP2_SYMBOL = 2;
+  uint8 constant public   MIRROR_STATUS_DUPLICATED_FRC2_SYMBOL = 2;
   uint8 constant public   MIRROR_STATUS_ALREADY_BOUND = 3;
   // sync status
   uint8 constant public   SYNC_STATUS_TIMEOUT = 1;
   uint8 constant public   SYNC_STATUS_NOT_BOUND_MIRROR = 2;
 
-  uint8 constant public   MINIMUM_BEP20_SYMBOL_LEN = 2;
-  uint8 constant public   MAXIMUM_BEP20_SYMBOL_LEN = 8;
+  uint8 constant public   MINIMUM_FRC20_SYMBOL_LEN = 2;
+  uint8 constant public   MAXIMUM_FRC20_SYMBOL_LEN = 8;
 
   uint256 constant public  TEN_DECIMALS = 1e10;
 
@@ -115,14 +115,14 @@ contract TokenManager is System, IApplication, IParamSubscriber {
   uint256 public mirrorFee;
   uint256 public syncFee;
 
-  event bindSuccess(address indexed contractAddr, string bep2Symbol, uint256 totalSupply, uint256 peggyAmount);
-  event bindFailure(address indexed contractAddr, string bep2Symbol, uint32 failedReason);
+  event bindSuccess(address indexed contractAddr, string FRC2Symbol, uint256 totalSupply, uint256 peggyAmount);
+  event bindFailure(address indexed contractAddr, string FRC2Symbol, uint32 failedReason);
   event unexpectedPackage(uint8 channelId, bytes msgBytes);
   event paramChange(string key, bytes value);
-  event mirrorSuccess(address indexed bep20Addr, bytes32 bep2Symbol);
-  event mirrorFailure(address indexed bep20Addr, uint8 errCode);
-  event syncSuccess(address indexed bep20Addr);
-  event syncFailure(address indexed bep20Addr, uint8 errCode);
+  event mirrorSuccess(address indexed FRC20Addr, bytes32 FRC2Symbol);
+  event mirrorFailure(address indexed FRC20Addr, uint8 errCode);
+  event syncSuccess(address indexed FRC20Addr);
+  event syncFailure(address indexed FRC20Addr, uint8 errCode);
 
   constructor() public {}
 
@@ -162,11 +162,11 @@ contract TokenManager is System, IApplication, IParamSubscriber {
     uint256 idx=0;
     while (iter.hasNext()) {
         if (idx == 0)      bindSynPkg.packageType      = uint8(iter.next().toUint());
-        else if (idx == 1) bindSynPkg.bep2TokenSymbol  = bytes32(iter.next().toUint());
+        else if (idx == 1) bindSynPkg.FRC2TokenSymbol  = bytes32(iter.next().toUint());
         else if (idx == 2) bindSynPkg.contractAddr     = iter.next().toAddress();
         else if (idx == 3) bindSynPkg.totalSupply      = iter.next().toUint();
         else if (idx == 4) bindSynPkg.peggyAmount      = iter.next().toUint();
-        else if (idx == 5) bindSynPkg.bep20Decimals    = uint8(iter.next().toUint());
+        else if (idx == 5) bindSynPkg.FRC20Decimals    = uint8(iter.next().toUint());
         else if (idx == 6) {
           bindSynPkg.expireTime       = uint64(iter.next().toUint());
           success = true;
@@ -181,11 +181,11 @@ contract TokenManager is System, IApplication, IParamSubscriber {
     (BindSynPackage memory bindSynPkg, bool success) = decodeBindSynPackage(msgBytes);
     require(success, "unrecognized transferIn package");
     if (bindSynPkg.packageType == BIND_PACKAGE) {
-      bindPackageRecord[bindSynPkg.bep2TokenSymbol]=bindSynPkg;
+      bindPackageRecord[bindSynPkg.FRC2TokenSymbol]=bindSynPkg;
     } else if (bindSynPkg.packageType == UNBIND_PACKAGE) {
-      address contractAddr = ITokenHub(TOKEN_HUB_ADDR).getContractAddrByBEP2Symbol(bindSynPkg.bep2TokenSymbol);
+      address contractAddr = ITokenHub(TOKEN_HUB_ADDR).getContractAddrByFRC2Symbol(bindSynPkg.FRC2TokenSymbol);
       if (contractAddr!=address(0x00)) {
-        ITokenHub(TOKEN_HUB_ADDR).unbindToken(bindSynPkg.bep2TokenSymbol, contractAddr);
+        ITokenHub(TOKEN_HUB_ADDR).unbindToken(bindSynPkg.FRC2TokenSymbol, contractAddr);
       }
     } else {
       require(false, "unrecognized bind package");
@@ -196,89 +196,89 @@ contract TokenManager is System, IApplication, IParamSubscriber {
   function encodeReactBindSynPackage(ReactBindSynPackage memory reactBindSynPackage) internal pure returns (bytes memory) {
     bytes[] memory elements = new bytes[](2);
     elements[0] = reactBindSynPackage.status.encodeUint();
-    elements[1] = uint256(reactBindSynPackage.bep2TokenSymbol).encodeUint();
+    elements[1] = uint256(reactBindSynPackage.FRC2TokenSymbol).encodeUint();
     return elements.encodeList();
   }
 
-  function approveBind(address contractAddr, string memory bep2Symbol) payable public returns (bool) {
-    require(!mirrorPendingRecord[contractAddr], "the bep20 token is in mirror pending status");
-    bytes32 bep2TokenSymbol = bep2TokenSymbolConvert(bep2Symbol);
-    BindSynPackage memory bindSynPkg = bindPackageRecord[bep2TokenSymbol];
-    require(bindSynPkg.bep2TokenSymbol!=bytes32(0x00), "bind request doesn't exist");
+  function approveBind(address contractAddr, string memory FRC2Symbol) payable public returns (bool) {
+    require(!mirrorPendingRecord[contractAddr], "the FRC20 token is in mirror pending status");
+    bytes32 FRC2TokenSymbol = FRC2TokenSymbolConvert(FRC2Symbol);
+    BindSynPackage memory bindSynPkg = bindPackageRecord[FRC2TokenSymbol];
+    require(bindSynPkg.FRC2TokenSymbol!=bytes32(0x00), "bind request doesn't exist");
     uint256 lockedAmount = bindSynPkg.totalSupply.sub(bindSynPkg.peggyAmount);
     require(contractAddr==bindSynPkg.contractAddr, "contact address doesn't equal to the contract address in bind request");
-    require(IBEP20(contractAddr).getOwner()==msg.sender, "only bep20 owner can approve this bind request");
-    uint256 tokenHubBalance = IBEP20(contractAddr).balanceOf(TOKEN_HUB_ADDR);
-    require(IBEP20(contractAddr).allowance(msg.sender, address(this)).add(tokenHubBalance)>=lockedAmount, "allowance is not enough");
+    require(IFRC20(contractAddr).getOwner()==msg.sender, "only FRC20 owner can approve this bind request");
+    uint256 tokenHubBalance = IFRC20(contractAddr).balanceOf(TOKEN_HUB_ADDR);
+    require(IFRC20(contractAddr).allowance(msg.sender, address(this)).add(tokenHubBalance)>=lockedAmount, "allowance is not enough");
     uint256 relayFee = msg.value;
     uint256 miniRelayFee = ITokenHub(TOKEN_HUB_ADDR).getMiniRelayFee();
     require(relayFee >= miniRelayFee && relayFee%TEN_DECIMALS == 0, "relayFee must be N * 1e10 and greater than miniRelayFee");
 
     uint32 verifyCode = verifyBindParameters(bindSynPkg, contractAddr);
     if (verifyCode == CODE_OK) {
-      IBEP20(contractAddr).transferFrom(msg.sender, TOKEN_HUB_ADDR, lockedAmount.sub(tokenHubBalance));
-      ITokenHub(TOKEN_HUB_ADDR).bindToken(bindSynPkg.bep2TokenSymbol, bindSynPkg.contractAddr, bindSynPkg.bep20Decimals);
-      emit bindSuccess(contractAddr, bep2Symbol, bindSynPkg.totalSupply, lockedAmount);
+      IFRC20(contractAddr).transferFrom(msg.sender, TOKEN_HUB_ADDR, lockedAmount.sub(tokenHubBalance));
+      ITokenHub(TOKEN_HUB_ADDR).bindToken(bindSynPkg.FRC2TokenSymbol, bindSynPkg.contractAddr, bindSynPkg.FRC20Decimals);
+      emit bindSuccess(contractAddr, FRC2Symbol, bindSynPkg.totalSupply, lockedAmount);
     } else {
-      emit bindFailure(contractAddr, bep2Symbol, verifyCode);
+      emit bindFailure(contractAddr, FRC2Symbol, verifyCode);
     }
-    delete bindPackageRecord[bep2TokenSymbol];
+    delete bindPackageRecord[FRC2TokenSymbol];
     ReactBindSynPackage memory reactBindSynPackage = ReactBindSynPackage({
       status: verifyCode,
-      bep2TokenSymbol: bep2TokenSymbol
+      FRC2TokenSymbol: FRC2TokenSymbol
     });
     address(uint160(TOKEN_HUB_ADDR)).transfer(relayFee);
     ICrossChain(CROSS_CHAIN_CONTRACT_ADDR).sendSynPackage(BIND_CHANNELID, encodeReactBindSynPackage(reactBindSynPackage), relayFee.div(TEN_DECIMALS));
     return true;
   }
 
-  function rejectBind(address contractAddr, string memory bep2Symbol) payable public returns (bool) {
-    bytes32 bep2TokenSymbol = bep2TokenSymbolConvert(bep2Symbol);
-    BindSynPackage memory bindSynPkg = bindPackageRecord[bep2TokenSymbol];
-    require(bindSynPkg.bep2TokenSymbol!=bytes32(0x00), "bind request doesn't exist");
+  function rejectBind(address contractAddr, string memory FRC2Symbol) payable public returns (bool) {
+    bytes32 FRC2TokenSymbol = FRC2TokenSymbolConvert(FRC2Symbol);
+    BindSynPackage memory bindSynPkg = bindPackageRecord[FRC2TokenSymbol];
+    require(bindSynPkg.FRC2TokenSymbol!=bytes32(0x00), "bind request doesn't exist");
     require(contractAddr==bindSynPkg.contractAddr, "contact address doesn't equal to the contract address in bind request");
-    require(IBEP20(contractAddr).getOwner()==msg.sender, "only bep20 owner can reject");
+    require(IFRC20(contractAddr).getOwner()==msg.sender, "only FRC20 owner can reject");
     uint256 relayFee = msg.value;
     uint256 miniRelayFee = ITokenHub(TOKEN_HUB_ADDR).getMiniRelayFee();
     require(relayFee >= miniRelayFee && relayFee%TEN_DECIMALS == 0, "relayFee must be N * 1e10 and greater than miniRelayFee");
-    delete bindPackageRecord[bep2TokenSymbol];
+    delete bindPackageRecord[FRC2TokenSymbol];
     ReactBindSynPackage memory reactBindSynPackage = ReactBindSynPackage({
       status: BIND_STATUS_REJECTED,
-      bep2TokenSymbol: bep2TokenSymbol
+      FRC2TokenSymbol: FRC2TokenSymbol
     });
     address(uint160(TOKEN_HUB_ADDR)).transfer(relayFee);
     ICrossChain(CROSS_CHAIN_CONTRACT_ADDR).sendSynPackage(BIND_CHANNELID, encodeReactBindSynPackage(reactBindSynPackage), relayFee.div(TEN_DECIMALS));
-    emit bindFailure(contractAddr, bep2Symbol, BIND_STATUS_REJECTED);
+    emit bindFailure(contractAddr, FRC2Symbol, BIND_STATUS_REJECTED);
     return true;
   }
 
-  function expireBind(string memory bep2Symbol) payable public returns (bool) {
-    bytes32 bep2TokenSymbol = bep2TokenSymbolConvert(bep2Symbol);
-    BindSynPackage memory bindSynPkg = bindPackageRecord[bep2TokenSymbol];
-    require(bindSynPkg.bep2TokenSymbol!=bytes32(0x00), "bind request doesn't exist");
+  function expireBind(string memory FRC2Symbol) payable public returns (bool) {
+    bytes32 FRC2TokenSymbol = FRC2TokenSymbolConvert(FRC2Symbol);
+    BindSynPackage memory bindSynPkg = bindPackageRecord[FRC2TokenSymbol];
+    require(bindSynPkg.FRC2TokenSymbol!=bytes32(0x00), "bind request doesn't exist");
     require(bindSynPkg.expireTime<block.timestamp, "bind request is not expired");
     uint256 relayFee = msg.value;
     uint256 miniRelayFee = ITokenHub(TOKEN_HUB_ADDR).getMiniRelayFee();
     require(relayFee >= miniRelayFee &&relayFee%TEN_DECIMALS == 0, "relayFee must be N * 1e10 and greater than miniRelayFee");
-    delete bindPackageRecord[bep2TokenSymbol];
+    delete bindPackageRecord[FRC2TokenSymbol];
     ReactBindSynPackage memory reactBindSynPackage = ReactBindSynPackage({
       status: BIND_STATUS_TIMEOUT,
-      bep2TokenSymbol: bep2TokenSymbol
+      FRC2TokenSymbol: FRC2TokenSymbol
     });
     address(uint160(TOKEN_HUB_ADDR)).transfer(relayFee);
     ICrossChain(CROSS_CHAIN_CONTRACT_ADDR).sendSynPackage(BIND_CHANNELID, encodeReactBindSynPackage(reactBindSynPackage), relayFee.div(TEN_DECIMALS));
-    emit bindFailure(bindSynPkg.contractAddr, bep2Symbol, BIND_STATUS_TIMEOUT);
+    emit bindFailure(bindSynPkg.contractAddr, FRC2Symbol, BIND_STATUS_TIMEOUT);
     return true;
   }
 
   function encodeMirrorSynPackage(MirrorSynPackage memory mirrorSynPackage) internal pure returns (bytes memory) {
     bytes[] memory elements = new bytes[](8);
     elements[0] = mirrorSynPackage.mirrorSender.encodeAddress();
-    elements[1] = mirrorSynPackage.bep20Addr.encodeAddress();
-    elements[2] = uint256(mirrorSynPackage.bep20Name).encodeUint();
-    elements[3] = uint256(mirrorSynPackage.bep20Symbol).encodeUint();
-    elements[4] = mirrorSynPackage.bep20Supply.encodeUint();
-    elements[5] = uint256(mirrorSynPackage.bep20Decimals).encodeUint();
+    elements[1] = mirrorSynPackage.FRC20Addr.encodeAddress();
+    elements[2] = uint256(mirrorSynPackage.FRC20Name).encodeUint();
+    elements[3] = uint256(mirrorSynPackage.FRC20Symbol).encodeUint();
+    elements[4] = mirrorSynPackage.FRC20Supply.encodeUint();
+    elements[5] = uint256(mirrorSynPackage.FRC20Decimals).encodeUint();
     elements[6] = mirrorSynPackage.mirrorFee.encodeUint();
     elements[7] = uint256(mirrorSynPackage.expireTime).encodeUint();
     return elements.encodeList();
@@ -291,11 +291,11 @@ contract TokenManager is System, IApplication, IParamSubscriber {
     uint256 idx=0;
     while (iter.hasNext()) {
       if (idx == 0)      mirrorSynPackage.mirrorSender  = iter.next().toAddress();
-      else if (idx == 1) mirrorSynPackage.bep20Addr     = iter.next().toAddress();
-      else if (idx == 2) mirrorSynPackage.bep20Name     = bytes32(iter.next().toUint());
-      else if (idx == 3) mirrorSynPackage.bep20Symbol   = bytes32(iter.next().toUint());
-      else if (idx == 4) mirrorSynPackage.bep20Supply   = iter.next().toUint();
-      else if (idx == 5) mirrorSynPackage.bep20Decimals = uint8(iter.next().toUint());
+      else if (idx == 1) mirrorSynPackage.FRC20Addr     = iter.next().toAddress();
+      else if (idx == 2) mirrorSynPackage.FRC20Name     = bytes32(iter.next().toUint());
+      else if (idx == 3) mirrorSynPackage.FRC20Symbol   = bytes32(iter.next().toUint());
+      else if (idx == 4) mirrorSynPackage.FRC20Supply   = iter.next().toUint();
+      else if (idx == 5) mirrorSynPackage.FRC20Decimals = uint8(iter.next().toUint());
       else if (idx == 6) mirrorSynPackage.mirrorFee     = iter.next().toUint();
       else if (idx == 7) {
         mirrorSynPackage.expireTime = uint64(iter.next().toUint());
@@ -314,9 +314,9 @@ contract TokenManager is System, IApplication, IParamSubscriber {
     uint256 idx=0;
     while (iter.hasNext()) {
       if (idx == 0)      mirrorAckPackage.mirrorSender   = iter.next().toAddress();
-      else if (idx == 1) mirrorAckPackage.bep20Addr      = iter.next().toAddress();
-      else if (idx == 2) mirrorAckPackage.bep20Decimals  = uint8(iter.next().toUint());
-      else if (idx == 3) mirrorAckPackage.bep2Symbol     = bytes32(iter.next().toUint());
+      else if (idx == 1) mirrorAckPackage.FRC20Addr      = iter.next().toAddress();
+      else if (idx == 2) mirrorAckPackage.FRC20Decimals  = uint8(iter.next().toUint());
+      else if (idx == 3) mirrorAckPackage.FRC2Symbol     = bytes32(iter.next().toUint());
       else if (idx == 4) mirrorAckPackage.mirrorFee      = iter.next().toUint();
       else if (idx == 5) {
         mirrorAckPackage.errorCode  = uint8(iter.next().toUint());
@@ -328,26 +328,26 @@ contract TokenManager is System, IApplication, IParamSubscriber {
     return (mirrorAckPackage, success);
   }
 
-  function mirror(address bep20Addr, uint64 expireTime) payable public returns (bool) {
-    require(ITokenHub(TOKEN_HUB_ADDR).getBep2SymbolByContractAddr(bep20Addr) == bytes32(0x00), "already bound");
-    require(!mirrorPendingRecord[bep20Addr], "mirror pending");
+  function mirror(address FRC20Addr, uint64 expireTime) payable public returns (bool) {
+    require(ITokenHub(TOKEN_HUB_ADDR).getFRC2SymbolByContractAddr(FRC20Addr) == bytes32(0x00), "already bound");
+    require(!mirrorPendingRecord[FRC20Addr], "mirror pending");
     uint256 miniRelayFee = ITokenHub(TOKEN_HUB_ADDR).getMiniRelayFee();
     require(msg.value%TEN_DECIMALS == 0 && msg.value>=mirrorFee.add(miniRelayFee), "msg.value must be N * 1e10 and greater than sum of miniRelayFee and mirrorFee");
     require(expireTime>=block.timestamp + 120 && expireTime <= block.timestamp + 86400, "expireTime must be two minutes later and one day earlier");
-    uint8 decimals = IBEP20(bep20Addr).decimals();
-    uint256 totalSupply = IBEP20(bep20Addr).totalSupply();
-    require(convertToBep2Amount(totalSupply, decimals) <= MAX_BEP2_TOTAL_SUPPLY, "too large total supply");
-    string memory name = IBEP20(bep20Addr).name();
+    uint8 decimals = IFRC20(FRC20Addr).decimals();
+    uint256 totalSupply = IFRC20(FRC20Addr).totalSupply();
+    require(convertToFRC2Amount(totalSupply, decimals) <= MAX_FRC2_TOTAL_SUPPLY, "too large total supply");
+    string memory name = IFRC20(FRC20Addr).name();
     bytes memory nameBytes = bytes(name);
     require(nameBytes.length>=1 && nameBytes.length<=32, "name length must be in [1,32]");
-    string memory symbol = IBEP20(bep20Addr).symbol();
+    string memory symbol = IFRC20(FRC20Addr).symbol();
     bytes memory symbolBytes = bytes(symbol);
-    require(symbolBytes.length>=MINIMUM_BEP20_SYMBOL_LEN && symbolBytes.length<=MAXIMUM_BEP20_SYMBOL_LEN, "symbol length must be in [2,8]");
+    require(symbolBytes.length>=MINIMUM_FRC20_SYMBOL_LEN && symbolBytes.length<=MAXIMUM_FRC20_SYMBOL_LEN, "symbol length must be in [2,8]");
     for (uint8 i = 0; i < symbolBytes.length; i++) {
       require((symbolBytes[i]>='A' && symbolBytes[i]<='Z') || (symbolBytes[i]>='a' && symbolBytes[i]<='z') || (symbolBytes[i]>='0' && symbolBytes[i]<='9'), "symbol should only contain alphabet and number");
     }
     address(uint160(TOKEN_HUB_ADDR)).transfer(msg.value.sub(mirrorFee));
-    mirrorPendingRecord[bep20Addr] = true;
+    mirrorPendingRecord[FRC20Addr] = true;
     bytes32 bytes32Name;
     assembly {
       bytes32Name := mload(add(name, 32))
@@ -358,11 +358,11 @@ contract TokenManager is System, IApplication, IParamSubscriber {
     }
     MirrorSynPackage memory mirrorSynPackage = MirrorSynPackage({
       mirrorSender:  msg.sender,
-      bep20Addr:     bep20Addr,
-      bep20Name:     bytes32Name,
-      bep20Symbol:   bytes32Symbol,
-      bep20Supply:   totalSupply,
-      bep20Decimals: decimals,
+      FRC20Addr:     FRC20Addr,
+      FRC20Name:     bytes32Name,
+      FRC20Symbol:   bytes32Symbol,
+      FRC20Supply:   totalSupply,
+      FRC20Decimals: decimals,
       mirrorFee:     mirrorFee.div(TEN_DECIMALS),
       expireTime:    expireTime
       });
@@ -373,26 +373,26 @@ contract TokenManager is System, IApplication, IParamSubscriber {
   function handleMirrorAckPackage(bytes memory msgBytes) internal {
     (MirrorAckPackage memory mirrorAckPackage, bool decodeSuccess) = decodeMirrorAckPackage(msgBytes);
     require(decodeSuccess, "unrecognized package");
-    mirrorPendingRecord[mirrorAckPackage.bep20Addr] = false;
+    mirrorPendingRecord[mirrorAckPackage.FRC20Addr] = false;
     if (mirrorAckPackage.errorCode == CODE_OK ) {
       address(uint160(TOKEN_HUB_ADDR)).transfer(mirrorAckPackage.mirrorFee);
-      ITokenHub(TOKEN_HUB_ADDR).bindToken(mirrorAckPackage.bep2Symbol, mirrorAckPackage.bep20Addr, mirrorAckPackage.bep20Decimals);
-      boundByMirror[mirrorAckPackage.bep20Addr] = true;
-      emit mirrorSuccess(mirrorAckPackage.bep20Addr, mirrorAckPackage.bep2Symbol);
+      ITokenHub(TOKEN_HUB_ADDR).bindToken(mirrorAckPackage.FRC2Symbol, mirrorAckPackage.FRC20Addr, mirrorAckPackage.FRC20Decimals);
+      boundByMirror[mirrorAckPackage.FRC20Addr] = true;
+      emit mirrorSuccess(mirrorAckPackage.FRC20Addr, mirrorAckPackage.FRC2Symbol);
       return;
     } else {
       (bool success, ) = mirrorAckPackage.mirrorSender.call{gas: MAX_GAS_FOR_TRANSFER_BNB, value: mirrorAckPackage.mirrorFee}("");
       if (!success) {
         address(uint160(SYSTEM_REWARD_ADDR)).transfer(mirrorAckPackage.mirrorFee);
       }
-      emit mirrorFailure(mirrorAckPackage.bep20Addr, mirrorAckPackage.errorCode);
+      emit mirrorFailure(mirrorAckPackage.FRC20Addr, mirrorAckPackage.errorCode);
     }
   }
 
   function handleMirrorFailAckPackage(bytes memory msgBytes) internal {
     (MirrorSynPackage memory mirrorSynPackage, bool decodeSuccess) = decodeMirrorSynPackage(msgBytes);
     require(decodeSuccess, "unrecognized package");
-    mirrorPendingRecord[mirrorSynPackage.bep20Addr] = false;
+    mirrorPendingRecord[mirrorSynPackage.FRC20Addr] = false;
     (bool success, ) = mirrorSynPackage.mirrorSender.call{gas: MAX_GAS_FOR_TRANSFER_BNB, value: mirrorSynPackage.mirrorFee.mul(TEN_DECIMALS)}("");
     if (!success) {
       address(uint160(SYSTEM_REWARD_ADDR)).transfer(mirrorSynPackage.mirrorFee.mul(TEN_DECIMALS));
@@ -402,9 +402,9 @@ contract TokenManager is System, IApplication, IParamSubscriber {
   function encodeSyncSynPackage(SyncSynPackage memory syncSynPackage) internal pure returns (bytes memory) {
     bytes[] memory elements = new bytes[](6);
     elements[0] = syncSynPackage.syncSender.encodeAddress();
-    elements[1] = syncSynPackage.bep20Addr.encodeAddress();
-    elements[2] = uint256(syncSynPackage.bep2Symbol).encodeUint();
-    elements[3] = syncSynPackage.bep20Supply.encodeUint();
+    elements[1] = syncSynPackage.FRC20Addr.encodeAddress();
+    elements[2] = uint256(syncSynPackage.FRC2Symbol).encodeUint();
+    elements[3] = syncSynPackage.FRC20Supply.encodeUint();
     elements[4] = syncSynPackage.syncFee.encodeUint();
     elements[5] = uint256(syncSynPackage.expireTime).encodeUint();
     return elements.encodeList();
@@ -417,9 +417,9 @@ contract TokenManager is System, IApplication, IParamSubscriber {
     uint256 idx=0;
     while (iter.hasNext()) {
       if (idx == 0)      syncSynPackage.syncSender  = iter.next().toAddress();
-      else if (idx == 1) syncSynPackage.bep20Addr   = iter.next().toAddress();
-      else if (idx == 2) syncSynPackage.bep2Symbol  = bytes32(iter.next().toUint());
-      else if (idx == 3) syncSynPackage.bep20Supply = iter.next().toUint();
+      else if (idx == 1) syncSynPackage.FRC20Addr   = iter.next().toAddress();
+      else if (idx == 2) syncSynPackage.FRC2Symbol  = bytes32(iter.next().toUint());
+      else if (idx == 3) syncSynPackage.FRC20Supply = iter.next().toUint();
       else if (idx == 4) syncSynPackage.syncFee     = iter.next().toUint();
       else if (idx == 5) {
         syncSynPackage.expireTime = uint64(iter.next().toUint());
@@ -438,7 +438,7 @@ contract TokenManager is System, IApplication, IParamSubscriber {
     uint256 idx=0;
     while (iter.hasNext()) {
       if (idx == 0)      syncAckPackage.syncSender   = iter.next().toAddress();
-      else if (idx == 1) syncAckPackage.bep20Addr    = iter.next().toAddress();
+      else if (idx == 1) syncAckPackage.FRC20Addr    = iter.next().toAddress();
       else if (idx == 2) syncAckPackage.syncFee      = iter.next().toUint();
       else if (idx == 3) {
         syncAckPackage.errorCode  = uint8(iter.next().toUint());
@@ -450,23 +450,23 @@ contract TokenManager is System, IApplication, IParamSubscriber {
     return (syncAckPackage, success);
   }
 
-  function sync(address bep20Addr, uint64 expireTime) payable public returns (bool) {
-    bytes32 bep2Symbol = ITokenHub(TOKEN_HUB_ADDR).getBep2SymbolByContractAddr(bep20Addr);
-    require(bep2Symbol != bytes32(0x00), "not bound");
-    require(boundByMirror[bep20Addr], "not bound by mirror");
+  function sync(address FRC20Addr, uint64 expireTime) payable public returns (bool) {
+    bytes32 FRC2Symbol = ITokenHub(TOKEN_HUB_ADDR).getFRC2SymbolByContractAddr(FRC20Addr);
+    require(FRC2Symbol != bytes32(0x00), "not bound");
+    require(boundByMirror[FRC20Addr], "not bound by mirror");
     uint256 miniRelayFee = ITokenHub(TOKEN_HUB_ADDR).getMiniRelayFee();
     require(msg.value%TEN_DECIMALS == 0 && msg.value>=syncFee.add(miniRelayFee), "msg.value must be N * 1e10 and no less sum of miniRelayFee and syncFee");
     require(expireTime>=block.timestamp + 120 && expireTime <= block.timestamp + 86400, "expireTime must be two minutes later and one day earlier");
-    uint256 totalSupply = IBEP20(bep20Addr).totalSupply();
-    uint8 decimals = IBEP20(bep20Addr).decimals();
-    require(convertToBep2Amount(totalSupply, decimals) <= MAX_BEP2_TOTAL_SUPPLY, "too large total supply");
+    uint256 totalSupply = IFRC20(FRC20Addr).totalSupply();
+    uint8 decimals = IFRC20(FRC20Addr).decimals();
+    require(convertToFRC2Amount(totalSupply, decimals) <= MAX_FRC2_TOTAL_SUPPLY, "too large total supply");
 
     address(uint160(TOKEN_HUB_ADDR)).transfer(msg.value.sub(syncFee));
     SyncSynPackage memory syncSynPackage = SyncSynPackage({
       syncSender:    msg.sender,
-      bep20Addr:     bep20Addr,
-      bep2Symbol:    bep2Symbol,
-      bep20Supply:   totalSupply,
+      FRC20Addr:     FRC20Addr,
+      FRC2Symbol:    FRC2Symbol,
+      FRC20Supply:   totalSupply,
       syncFee:       syncFee.div(TEN_DECIMALS),
       expireTime:    expireTime
       });
@@ -479,10 +479,10 @@ contract TokenManager is System, IApplication, IParamSubscriber {
     require(decodeSuccess, "unrecognized package");
     if (syncAckPackage.errorCode == CODE_OK ) {
       address(uint160(TOKEN_HUB_ADDR)).transfer(syncAckPackage.syncFee);
-      emit syncSuccess(syncAckPackage.bep20Addr);
+      emit syncSuccess(syncAckPackage.FRC20Addr);
       return;
     } else  {
-      emit syncFailure(syncAckPackage.bep20Addr, syncAckPackage.errorCode);
+      emit syncFailure(syncAckPackage.FRC20Addr, syncAckPackage.errorCode);
     }
     (bool success, ) = syncAckPackage.syncSender.call{gas: MAX_GAS_FOR_TRANSFER_BNB, value: syncAckPackage.syncFee}("");
     if (!success) {
@@ -527,7 +527,7 @@ contract TokenManager is System, IApplication, IParamSubscriber {
     emit paramChange(key, value);
   }
 
-  function bep2TokenSymbolConvert(string memory symbol) internal pure returns(bytes32) {
+  function FRC2TokenSymbolConvert(string memory symbol) internal pure returns(bytes32) {
     bytes32 result;
     assembly {
       result := mload(add(symbol, 32))
@@ -536,62 +536,62 @@ contract TokenManager is System, IApplication, IParamSubscriber {
   }
 
   function queryRequiredLockAmountForBind(string memory symbol) public view returns(uint256) {
-    bytes32 bep2Symbol;
+    bytes32 FRC2Symbol;
     assembly {
-      bep2Symbol := mload(add(symbol, 32))
+      FRC2Symbol := mload(add(symbol, 32))
     }
-    BindSynPackage memory bindRequest = bindPackageRecord[bep2Symbol];
+    BindSynPackage memory bindRequest = bindPackageRecord[FRC2Symbol];
     if (bindRequest.contractAddr==address(0x00)) {
       return 0;
     }
-    uint256 tokenHubBalance = IBEP20(bindRequest.contractAddr).balanceOf(TOKEN_HUB_ADDR);
+    uint256 tokenHubBalance = IFRC20(bindRequest.contractAddr).balanceOf(TOKEN_HUB_ADDR);
     uint256 requiredBalance = bindRequest.totalSupply.sub(bindRequest.peggyAmount);
     return requiredBalance.sub(tokenHubBalance);
   }
 
   function verifyBindParameters(BindSynPackage memory bindSynPkg, address contractAddr) internal view returns(uint32) {
-    uint256 decimals = IBEP20(contractAddr).decimals();
-    string memory bep20Symbol = IBEP20(contractAddr).symbol();
-    uint256 tokenHubBalance = IBEP20(contractAddr).balanceOf(TOKEN_HUB_ADDR);
+    uint256 decimals = IFRC20(contractAddr).decimals();
+    string memory FRC20Symbol = IFRC20(contractAddr).symbol();
+    uint256 tokenHubBalance = IFRC20(contractAddr).balanceOf(TOKEN_HUB_ADDR);
     uint256 lockedAmount = bindSynPkg.totalSupply.sub(bindSynPkg.peggyAmount);
     if (bindSynPkg.expireTime<block.timestamp) {
       return BIND_STATUS_TIMEOUT;
     }
-    if (!checkSymbol(bep20Symbol, bindSynPkg.bep2TokenSymbol)) {
+    if (!checkSymbol(FRC20Symbol, bindSynPkg.FRC2TokenSymbol)) {
       return BIND_STATUS_SYMBOL_MISMATCH;
     }
     if (tokenHubBalance > lockedAmount) {
       return BIND_STATUS_TOO_MUCH_TOKENHUB_BALANCE;
     }
-    if (IBEP20(bindSynPkg.contractAddr).totalSupply() != bindSynPkg.totalSupply) {
+    if (IFRC20(bindSynPkg.contractAddr).totalSupply() != bindSynPkg.totalSupply) {
       return BIND_STATUS_TOTAL_SUPPLY_MISMATCH;
     }
-    if (decimals!=bindSynPkg.bep20Decimals) {
+    if (decimals!=bindSynPkg.FRC20Decimals) {
       return BIND_STATUS_DECIMALS_MISMATCH;
     }
-    if (ITokenHub(TOKEN_HUB_ADDR).getContractAddrByBEP2Symbol(bindSynPkg.bep2TokenSymbol)!=address(0x00)||
-    ITokenHub(TOKEN_HUB_ADDR).getBep2SymbolByContractAddr(bindSynPkg.contractAddr)!=bytes32(0x00)) {
+    if (ITokenHub(TOKEN_HUB_ADDR).getContractAddrByFRC2Symbol(bindSynPkg.FRC2TokenSymbol)!=address(0x00)||
+    ITokenHub(TOKEN_HUB_ADDR).getFRC2SymbolByContractAddr(bindSynPkg.contractAddr)!=bytes32(0x00)) {
       return BIND_STATUS_ALREADY_BOUND_TOKEN;
     }
     return CODE_OK;
   }
 
-  function checkSymbol(string memory bep20Symbol, bytes32 bep2TokenSymbol) internal pure returns(bool) {
-    bytes memory bep20SymbolBytes = bytes(bep20Symbol);
-    if (bep20SymbolBytes.length > MAXIMUM_BEP20_SYMBOL_LEN || bep20SymbolBytes.length < MINIMUM_BEP20_SYMBOL_LEN) {
+  function checkSymbol(string memory FRC20Symbol, bytes32 FRC2TokenSymbol) internal pure returns(bool) {
+    bytes memory FRC20SymbolBytes = bytes(FRC20Symbol);
+    if (FRC20SymbolBytes.length > MAXIMUM_FRC20_SYMBOL_LEN || FRC20SymbolBytes.length < MINIMUM_FRC20_SYMBOL_LEN) {
       return false;
     }
 
-    bytes memory bep2TokenSymbolBytes = new bytes(32);
+    bytes memory FRC2TokenSymbolBytes = new bytes(32);
     assembly {
-      mstore(add(bep2TokenSymbolBytes, 32), bep2TokenSymbol)
+      mstore(add(FRC2TokenSymbolBytes, 32), FRC2TokenSymbol)
     }
-    if (bep2TokenSymbolBytes[bep20SymbolBytes.length] != 0x2d) { // '-'
+    if (FRC2TokenSymbolBytes[FRC20SymbolBytes.length] != 0x2d) { // '-'
       return false;
     }
     bool symbolMatch = true;
-    for (uint256 index=0; index < bep20SymbolBytes.length; index++) {
-      if (bep20SymbolBytes[index] != bep2TokenSymbolBytes[index]) {
+    for (uint256 index=0; index < FRC20SymbolBytes.length; index++) {
+      if (FRC20SymbolBytes[index] != FRC2TokenSymbolBytes[index]) {
         symbolMatch = false;
         break;
       }
@@ -599,11 +599,11 @@ contract TokenManager is System, IApplication, IParamSubscriber {
     return symbolMatch;
   }
 
-  function convertToBep2Amount(uint256 amount, uint256 bep20TokenDecimals) internal pure returns (uint256) {
-    if (bep20TokenDecimals > BEP2_TOKEN_DECIMALS) {
-      require(bep20TokenDecimals-BEP2_TOKEN_DECIMALS <= LOG_MAX_UINT256, "too large decimals");
-      return amount.div(10**(bep20TokenDecimals-BEP2_TOKEN_DECIMALS));
+  function convertToFRC2Amount(uint256 amount, uint256 FRC20TokenDecimals) internal pure returns (uint256) {
+    if (FRC20TokenDecimals > FRC2_TOKEN_DECIMALS) {
+      require(FRC20TokenDecimals-FRC2_TOKEN_DECIMALS <= LOG_MAX_UINT256, "too large decimals");
+      return amount.div(10**(FRC20TokenDecimals-FRC2_TOKEN_DECIMALS));
     }
-    return amount.mul(10**(BEP2_TOKEN_DECIMALS-bep20TokenDecimals));
+    return amount.mul(10**(FRC2_TOKEN_DECIMALS-FRC20TokenDecimals));
   }
 }

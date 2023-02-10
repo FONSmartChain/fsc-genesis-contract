@@ -8,7 +8,7 @@ import "./interface/ISlashIndicator.sol";
 import "./interface/ITokenHub.sol";
 import "./interface/IRelayerHub.sol";
 import "./interface/IParamSubscriber.sol";
-import "./interface/IBSCValidatorSet.sol";
+import "./interface/IbscValidatorSet.sol";
 import "./interface/IApplication.sol";
 import "./lib/SafeMath.sol";
 import "./lib/RLPDecode.sol";
@@ -18,7 +18,7 @@ interface IVote {
   function activeNode() external view returns (uint256 count, address[20] memory result);
 }
 
-contract BSCValidatorSet is IBSCValidatorSet, System, IParamSubscriber, IApplication {
+contract bscValidatorSet is IbscValidatorSet, System, IParamSubscriber, IApplication {
 
   using SafeMath for uint256;
 
@@ -35,7 +35,7 @@ contract BSCValidatorSet is IBSCValidatorSet, System, IParamSubscriber, IApplica
   uint256 public constant EXPIRE_TIME_SECOND_GAP = 1000;
   uint256 public constant MAX_NUM_OF_VALIDATORS = 21;
 
-  bytes public constant INIT_VALIDATORSET_BYTES = hex"{{initValidatorSetBytes}}";
+  bytes public constant INIT_VALIDATORSET_BYTES = hex"f84580f842f8409429f31a69a450d9f0022dc410a2d48291d6a382449429f31a69a450d9f0022dc410a2d48291d6a382449429f31a69a450d9f0022dc410a2d48291d6a3824464";
 
   uint32 public constant ERROR_UNKNOWN_PACKAGE_TYPE = 101;
   uint32 public constant ERROR_FAIL_CHECK_VALIDATORS = 102;
@@ -57,7 +57,7 @@ contract BSCValidatorSet is IBSCValidatorSet, System, IParamSubscriber, IApplica
 
   uint256 public constant BURN_RATIO_SCALE = 10000;
   address public constant BURN_ADDRESS = 0x000000000000000000000000000000000000dEaD;
-  uint256 public constant INIT_BURN_RATIO = {{initBurnRatio}};
+  uint256 public constant INIT_BURN_RATIO = 1000;
   uint256 public burnRatio;
   bool public burnRatioInitialized;
 
@@ -802,26 +802,5 @@ contract BSCValidatorSet is IBSCValidatorSet, System, IParamSubscriber, IApplica
     return (validator, success);
   }
 
-    {% if mock %}
-
-  function isValidatorExist(address validator)external view returns(bool) {
-    uint256 index = currentValidatorSetMap[validator];
-    if (index<=0) {
-      return false;
-    }
-    return true;
-  }
-
-  function getMaintainingValidators() public view returns (address[] memory maintainingValidators) {
-    maintainingValidators = new address[](numOfMaintaining);
-    uint256 count = 0;
-    for (uint i = 0; i < currentValidatorSet.length; i++) {
-      if (validatorExtraSet[i].isMaintaining) {
-        maintainingValidators[count] = currentValidatorSet[i].consensusAddress;
-        count ++;
-      }
-    }
-  }
-
-    {% endif %}
+    
 }

@@ -12,7 +12,7 @@ const BytesLib = artifacts.require("solidity-bytes-utils/contracts/BytesLib");
 const MockLightClient = artifacts.require("mock/MockLightClient");
 const MockTokenHub = artifacts.require("mock/MockTokenHub");
 const MockRelayerHub = artifacts.require("mock/MockRelayerHub");
-const BSCValidatorSet = artifacts.require("BSCValidatorSet");
+const FSCValidatorSet = artifacts.require("FSCValidatorSet");
 const RelayerHub = artifacts.require("RelayerHub");
 const GovHub = artifacts.require("GovHub");
 
@@ -26,7 +26,7 @@ const DEFToken = artifacts.require("test/DEFToken");
 const XYZToken = artifacts.require("test/XYZToken");
 const MiniToken = artifacts.require("test/MiniToken");
 const MaliciousToken = artifacts.require("test/MaliciousToken");
-const BSCValidatorSetTool = artifacts.require("tool/BSCValidatorSetTool");
+const FSCValidatorSetTool = artifacts.require("tool/FSCValidatorSetTool");
 
 const Web3 = require('web3');
 const web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'));
@@ -53,7 +53,7 @@ module.exports = function(deployer, network, accounts) {
   deployer.deploy(MiniToken);
   deployer.deploy(MaliciousToken);
   deployer.deploy(MockRelayerHub);
-  deployer.deploy(BSCValidatorSetTool);
+  deployer.deploy(FSCValidatorSetTool);
 
   // let operators = [accounts[0],accounts[1], accounts[2]];
   deployer.deploy(SystemReward).then(function (instance) {
@@ -116,12 +116,12 @@ module.exports = function(deployer, network, accounts) {
     return deployer.deploy(SlashIndicator);
   }).then(function(slashInstance) {
     slashInstance.init();
-    deployer.link(TypesToBytes, BSCValidatorSet);
-    deployer.link(BytesToTypes, BSCValidatorSet);
-    deployer.link(Memory, BSCValidatorSet);
-    deployer.link(BytesLib, BSCValidatorSet);
-    deployer.link(CmnPkg, BSCValidatorSet);
-    deployer.link(RLPDecode, BSCValidatorSet);
+    deployer.link(TypesToBytes, FSCValidatorSet);
+    deployer.link(BytesToTypes, FSCValidatorSet);
+    deployer.link(Memory, FSCValidatorSet);
+    deployer.link(BytesLib, FSCValidatorSet);
+    deployer.link(CmnPkg, FSCValidatorSet);
+    deployer.link(RLPDecode, FSCValidatorSet);
 
     deployer.link(BytesToTypes, GovHub);
     deployer.link(Memory, GovHub);
@@ -132,17 +132,17 @@ module.exports = function(deployer, network, accounts) {
       govHubInstance=_govHubInstance;
     });
 
-    return deployer.deploy(BSCValidatorSet).then(function (validatorInstance) {
+    return deployer.deploy(FSCValidatorSet).then(function (validatorInstance) {
       validatorInstance.init();
-      relayerIncentivizeInstance.updateContractAddr(BSCValidatorSet.address, SlashIndicator.address, SystemReward.address, MockLightClient.address,TokenHub.address,RelayerIncentivize.address,RelayerHub.address,GovHub.address, TokenManager.address, CrossChain.address);
-      tendermintLightClientInstance.updateContractAddr(BSCValidatorSet.address, SlashIndicator.address, SystemReward.address, MockLightClient.address,TokenHub.address,RelayerIncentivize.address,RelayerHub.address,GovHub.address, TokenManager.address, CrossChain.address);
-      tokenHubInstance.updateContractAddr(BSCValidatorSet.address, SlashIndicator.address, SystemReward.address, MockLightClient.address,TokenHub.address,RelayerIncentivize.address,RelayerHub.address,GovHub.address, TokenManager.address, CrossChain.address);
-      tokenMgrInstance.updateContractAddr(BSCValidatorSet.address, SlashIndicator.address, SystemReward.address, MockLightClient.address,TokenHub.address,RelayerIncentivize.address,RelayerHub.address,GovHub.address, TokenManager.address, CrossChain.address);
-      govHubInstance.updateContractAddr(BSCValidatorSet.address, SlashIndicator.address, SystemReward.address, MockLightClient.address,TokenHub.address,RelayerIncentivize.address,RelayerHub.address,GovHub.address, TokenManager.address, accounts[8]);
-      slashInstance.updateContractAddr(BSCValidatorSet.address, SlashIndicator.address, SystemReward.address, MockLightClient.address,TokenHub.address,RelayerIncentivize.address,RelayerHub.address,GovHub.address, TokenManager.address, CrossChain.address);
-      validatorInstance.updateContractAddr(BSCValidatorSet.address, SlashIndicator.address, SystemReward.address, MockLightClient.address,MockTokenHub.address,RelayerIncentivize.address,RelayerHub.address,GovHub.address, TokenManager.address, accounts[8]);
-      relayerHubInstance.updateContractAddr(BSCValidatorSet.address, SlashIndicator.address, SystemReward.address, MockLightClient.address,TokenHub.address,RelayerIncentivize.address,RelayerHub.address,GovHub.address, TokenManager.address, CrossChain.address);
-      crossChainInstance.updateContractAddr(BSCValidatorSet.address, SlashIndicator.address, SystemReward.address, MockLightClient.address,TokenHub.address,RelayerIncentivize.address,RelayerHub.address,GovHub.address, TokenManager.address, CrossChain.address);
+      relayerIncentivizeInstance.updateContractAddr(FSCValidatorSet.address, SlashIndicator.address, SystemReward.address, MockLightClient.address,TokenHub.address,RelayerIncentivize.address,RelayerHub.address,GovHub.address, TokenManager.address, CrossChain.address);
+      tendermintLightClientInstance.updateContractAddr(FSCValidatorSet.address, SlashIndicator.address, SystemReward.address, MockLightClient.address,TokenHub.address,RelayerIncentivize.address,RelayerHub.address,GovHub.address, TokenManager.address, CrossChain.address);
+      tokenHubInstance.updateContractAddr(FSCValidatorSet.address, SlashIndicator.address, SystemReward.address, MockLightClient.address,TokenHub.address,RelayerIncentivize.address,RelayerHub.address,GovHub.address, TokenManager.address, CrossChain.address);
+      tokenMgrInstance.updateContractAddr(FSCValidatorSet.address, SlashIndicator.address, SystemReward.address, MockLightClient.address,TokenHub.address,RelayerIncentivize.address,RelayerHub.address,GovHub.address, TokenManager.address, CrossChain.address);
+      govHubInstance.updateContractAddr(FSCValidatorSet.address, SlashIndicator.address, SystemReward.address, MockLightClient.address,TokenHub.address,RelayerIncentivize.address,RelayerHub.address,GovHub.address, TokenManager.address, accounts[8]);
+      slashInstance.updateContractAddr(FSCValidatorSet.address, SlashIndicator.address, SystemReward.address, MockLightClient.address,TokenHub.address,RelayerIncentivize.address,RelayerHub.address,GovHub.address, TokenManager.address, CrossChain.address);
+      validatorInstance.updateContractAddr(FSCValidatorSet.address, SlashIndicator.address, SystemReward.address, MockLightClient.address,MockTokenHub.address,RelayerIncentivize.address,RelayerHub.address,GovHub.address, TokenManager.address, accounts[8]);
+      relayerHubInstance.updateContractAddr(FSCValidatorSet.address, SlashIndicator.address, SystemReward.address, MockLightClient.address,TokenHub.address,RelayerIncentivize.address,RelayerHub.address,GovHub.address, TokenManager.address, CrossChain.address);
+      crossChainInstance.updateContractAddr(FSCValidatorSet.address, SlashIndicator.address, SystemReward.address, MockLightClient.address,TokenHub.address,RelayerIncentivize.address,RelayerHub.address,GovHub.address, TokenManager.address, CrossChain.address);
       crossChainInstance.init();
     });
   });

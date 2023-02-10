@@ -1,11 +1,11 @@
 pragma solidity 0.6.4;
 
-import "../interface/IBEP20.sol";
+import "../interface/IFRC20.sol";
 import "openzeppelin-solidity/contracts/GSN/Context.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/access/Ownable.sol";
 
-contract ABCToken is Context, IBEP20, Ownable {
+contract ABCToken is Context, IFRC20, Ownable {
   using SafeMath for uint256;
 
   mapping (address => uint256) private _balances;

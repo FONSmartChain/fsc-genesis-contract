@@ -13,7 +13,7 @@ import {
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import web3 from 'web3';
 import {
-  BSCValidatorSet,
+  FSCValidatorSet,
   SlashIndicator,
   CrossChain,
   GovHub,
@@ -41,13 +41,13 @@ const deployContractAndInit = async (
   return instance;
 };
 
-describe('BSCValidatorSet', () => {
+describe('FSCValidatorSet', () => {
   const unit = ethers.constants.WeiPerEther;
   let instances: any[];
 
   let relayerIncentivize: RelayerIncentivize;
   let tendermintLightClient: TendermintLightClient;
-  let validatorSet: BSCValidatorSet;
+  let validatorSet: FSCValidatorSet;
   let systemReward: SystemReward;
   let slashIndicator: SlashIndicator;
   let crosschain: CrossChain;
@@ -120,7 +120,7 @@ describe('BSCValidatorSet', () => {
         needUpdate: true,
       },
       {
-        name: 'BSCValidatorSet', // 10
+        name: 'FSCValidatorSet', // 10
         needInit: true,
         needUpdate: true,
       },
@@ -140,7 +140,7 @@ describe('BSCValidatorSet', () => {
       }
 
       let crosschainAddress = instances[2].address;
-      if (pathObj.name === 'BSCValidatorSet' || pathObj.name === 'GovHub') {
+      if (pathObj.name === 'FSCValidatorSet' || pathObj.name === 'GovHub') {
         crosschainAddress = operator.address;
       }
 
@@ -169,7 +169,7 @@ describe('BSCValidatorSet', () => {
     await waitTx(systemReward.addOperator(tendermintLightClient.address));
     await waitTx(systemReward.addOperator(relayerIncentivize.address));
 
-    validatorSet = instances[10] as BSCValidatorSet;
+    validatorSet = instances[10] as FSCValidatorSet;
     relayerHub = instances[7] as RelayerHub;
 
     crosschain = instances[2] as CrossChain;
@@ -183,7 +183,7 @@ describe('BSCValidatorSet', () => {
   it('query code size', async () => {
     const code = await ethers.provider.getCode(validatorSet.address)
     const codeSize = (code.length - 2) / 2
-    log(`BSCValidatorSet Mock Template code size: ${codeSize}, UpperLimit: 24567` )
+    log(`FSCValidatorSet Mock Template code size: ${codeSize}, UpperLimit: 24567` )
   });
 
   it('update validators', async () => {

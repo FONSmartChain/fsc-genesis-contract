@@ -4,7 +4,7 @@ import "../lib/RLPDecode.sol";
 import "../lib/Memory.sol";
 
 
-contract BSCValidatorSetTool {
+contract FSCValidatorSetTool {
 
   bytes public constant INIT_VALIDATORSET_BYTES = hex"f84580f842f840949fb29aac15b9a4b7f17c3385939b007540f4d791949fb29aac15b9a4b7f17c3385939b007540f4d791949fb29aac15b9a4b7f17c3385939b007540f4d79164";
 

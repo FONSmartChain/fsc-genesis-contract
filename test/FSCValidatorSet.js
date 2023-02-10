@@ -1,4 +1,4 @@
-const BSCValidatorSet = artifacts.require("BSCValidatorSet");
+const FSCValidatorSet = artifacts.require("FSCValidatorSet");
 const SystemReward = artifacts.require("SystemReward");
 const LightClient = artifacts.require("MockLightClient");
 const RelayerIncentivize = artifacts.require("RelayerIncentivize");
@@ -24,9 +24,9 @@ const packageBytesPrefix = Buffer.from(web3.utils.hexToBytes(
     "000000000000000000000000000000000000000000000000002386F26FC10000"
 ));
 
-contract('BSCValidatorSet', (accounts) => {
+contract('FSCValidatorSet', (accounts) => {
   it('query basic info', async () => {
-    const validatorSetInstance = await BSCValidatorSet.deployed();
+    const validatorSetInstance = await FSCValidatorSet.deployed();
 
     let totalInComing = await validatorSetInstance.totalInComing.call();
     assert.equal(totalInComing,0, "totalInComing should be 0");
@@ -36,7 +36,7 @@ contract('BSCValidatorSet', (accounts) => {
   });
 
   it('deposit success and fail', async () => {
-    const validatorSetInstance = await BSCValidatorSet.deployed();
+    const validatorSetInstance = await FSCValidatorSet.deployed();
     let validator =  accounts[0];
     let systemAccount = accounts[0];
     let tx = await validatorSetInstance.deposit(validator, {from: systemAccount, value: 1e8 });
@@ -83,9 +83,9 @@ contract('BSCValidatorSet', (accounts) => {
 
 });
 
-contract('BSCValidatorSet', (accounts) => {
+contract('FSCValidatorSet', (accounts) => {
   it('test distribute algorithm', async () => {
-    const validatorSetInstance = await BSCValidatorSet.deployed();
+    const validatorSetInstance = await FSCValidatorSet.deployed();
     const systemRewardInstance = await SystemReward.deployed();
 
     let validator =  accounts[0];
@@ -145,9 +145,9 @@ contract('BSCValidatorSet', (accounts) => {
 
 });
 
-contract('BSCValidatorSet', (accounts) => {
+contract('FSCValidatorSet', (accounts) => {
   it('test distribute algorithm with 41 validators', async () => {
-    const validatorSetInstance = await BSCValidatorSet.deployed();
+    const validatorSetInstance = await FSCValidatorSet.deployed();
     const systemRewardInstance = await SystemReward.deployed();
 
     let systemAccount = accounts[0];
@@ -182,9 +182,9 @@ contract('BSCValidatorSet', (accounts) => {
 
 });
 
-contract('BSCValidatorSet', (accounts) => {
+contract('FSCValidatorSet', (accounts) => {
   it('complicate validatorSet change and test valdiatorset map', async () => {
-    const validatorSetInstance = await BSCValidatorSet.deployed();
+    const validatorSetInstance = await FSCValidatorSet.deployed();
     const systemRewardInstance = await SystemReward.deployed();
 
     let validatorA =  accounts[0];
@@ -225,9 +225,9 @@ contract('BSCValidatorSet', (accounts) => {
 });
 
 
-contract('BSCValidatorSet', (accounts) => {
+contract('FSCValidatorSet', (accounts) => {
   it('failed to update', async () => {
-    const validatorSetInstance = await BSCValidatorSet.deployed();
+    const validatorSetInstance = await FSCValidatorSet.deployed();
     const systemRewardInstance = await SystemReward.deployed();
     const crossChain = await CrossChain.deployed();
 
@@ -284,9 +284,9 @@ contract('BSCValidatorSet', (accounts) => {
   });
 });
 
-contract('BSCValidatorSet', (accounts) => {
+contract('FSCValidatorSet', (accounts) => {
   it('complicate distribute', async () => {
-    const validatorSetInstance = await BSCValidatorSet.deployed();
+    const validatorSetInstance = await FSCValidatorSet.deployed();
     const systemRewardInstance = await SystemReward.deployed();
 
     let validatorA = web3.eth.accounts.create().address;
@@ -348,9 +348,9 @@ contract('BSCValidatorSet', (accounts) => {
 });
 
 
-contract('BSCValidatorSet', (accounts) => {
+contract('FSCValidatorSet', (accounts) => {
   it('complicate distribute when one validar fee addr is contract', async () => {
-    const validatorSetInstance = await BSCValidatorSet.deployed();
+    const validatorSetInstance = await FSCValidatorSet.deployed();
     const systemRewardInstance = await SystemReward.deployed();
 
     let validatorA = validatorSetInstance.address;
@@ -415,9 +415,9 @@ contract('BSCValidatorSet', (accounts) => {
   });
 });
 
-contract('BSCValidatorSet', (accounts) => {
+contract('FSCValidatorSet', (accounts) => {
   it('complicate distribute when cross chain transfer failed', async () => {
-    const validatorSetInstance = await BSCValidatorSet.deployed();
+    const validatorSetInstance = await FSCValidatorSet.deployed();
     const systemRewardInstance = await SystemReward.deployed();
     const tokenHub = await MockTokenHub.deployed();
 
@@ -484,9 +484,9 @@ contract('BSCValidatorSet', (accounts) => {
   });
 });
 
-contract('BSCValidatorSet', (accounts) => {
+contract('FSCValidatorSet', (accounts) => {
   it('validator jail', async () => {
-    const validatorSetInstance = await BSCValidatorSet.deployed();
+    const validatorSetInstance = await FSCValidatorSet.deployed();
 
     let newValidator1 = web3.eth.accounts.create();
     let newValidator2 = web3.eth.accounts.create();
@@ -542,9 +542,9 @@ contract('BSCValidatorSet', (accounts) => {
   });
 });
 
-contract('BSCValidatorSet', (accounts) => {
+contract('FSCValidatorSet', (accounts) => {
   it('test distribute algorithm with more than 41 validators', async () => {
-    const validatorSetInstance = await BSCValidatorSet.deployed();
+    const validatorSetInstance = await FSCValidatorSet.deployed();
     let relayerAccount = accounts[8];
 
     let newValidators = [];
@@ -561,9 +561,9 @@ contract('BSCValidatorSet', (accounts) => {
   });
 });
 
-contract('BSCValidatorSet', (accounts) => {
+contract('FSCValidatorSet', (accounts) => {
   it('burn', async () => {
-    const validatorSetInstance = await BSCValidatorSet.deployed();
+    const validatorSetInstance = await FSCValidatorSet.deployed();
     let systemAccount = accounts[0];
     let validator =  accounts[0];
 
@@ -578,7 +578,7 @@ contract('BSCValidatorSet', (accounts) => {
     let initialBurnRatio = await validatorSetInstance.burnRatio.call();
     assert.equal(web3.utils.toBN(initialBurnRatio).eq(web3.utils.toBN(0)), true, "wrong burnRatio");
 
-    await govHub.updateContractAddr(BSCValidatorSet.address, SlashIndicator.address, SystemReward.address, LightClient.address, MockTokenHub.address, RelayerIncentivize.address, RelayerHub.address, GovHub.address, TokenManager.address, crossChain.address);
+    await govHub.updateContractAddr(FSCValidatorSet.address, SlashIndicator.address, SystemReward.address, LightClient.address, MockTokenHub.address, RelayerIncentivize.address, RelayerHub.address, GovHub.address, TokenManager.address, crossChain.address);
 
     let govChannelSeq = await crossChain.channelReceiveSequenceMap(GOV_CHANNEL_ID);
     let govValue = "0x0000000000000000000000000000000000000000000000000000000000000BB8";// 3000;
@@ -600,15 +600,15 @@ contract('BSCValidatorSet', (accounts) => {
   });
 });
 
-contract('BSCValidatorSet', (accounts) => {
+contract('FSCValidatorSet', (accounts) => {
   it('test set maxNumOfWorkingCandidates greater than maxNumOfCandidates', async () => {
-    const validatorSetInstance = await BSCValidatorSet.deployed();
+    const validatorSetInstance = await FSCValidatorSet.deployed();
     const relayer = accounts[2];
     const relayerInstance = await RelayerHub.deployed();
     await relayerInstance.register({from: relayer, value: 1e20});
     const crossChain = await CrossChain.deployed();
     const govHub = await GovHub.deployed();
-    await govHub.updateContractAddr(BSCValidatorSet.address, SlashIndicator.address, SystemReward.address, LightClient.address, MockTokenHub.address, RelayerIncentivize.address, RelayerHub.address, GovHub.address, TokenManager.address, crossChain.address);
+    await govHub.updateContractAddr(FSCValidatorSet.address, SlashIndicator.address, SystemReward.address, LightClient.address, MockTokenHub.address, RelayerIncentivize.address, RelayerHub.address, GovHub.address, TokenManager.address, crossChain.address);
 
     // should fail
     govChannelSeq = await crossChain.channelReceiveSequenceMap(GOV_CHANNEL_ID)
@@ -620,15 +620,15 @@ contract('BSCValidatorSet', (accounts) => {
   });
 });
 
-contract('BSCValidatorSet', (accounts) => {
+contract('FSCValidatorSet', (accounts) => {
   it('test set maxNumOfCandidates less than maxNumOfWorkingCandidates', async () => {
-    const validatorSetInstance = await BSCValidatorSet.deployed();
+    const validatorSetInstance = await FSCValidatorSet.deployed();
     const relayer = accounts[2];
     const relayerInstance = await RelayerHub.deployed();
     await relayerInstance.register({from: relayer, value: 1e20});
     const crossChain = await CrossChain.deployed();
     const govHub = await GovHub.deployed();
-    await govHub.updateContractAddr(BSCValidatorSet.address, SlashIndicator.address, SystemReward.address, LightClient.address, MockTokenHub.address, RelayerIncentivize.address, RelayerHub.address, GovHub.address, TokenManager.address, crossChain.address);
+    await govHub.updateContractAddr(FSCValidatorSet.address, SlashIndicator.address, SystemReward.address, LightClient.address, MockTokenHub.address, RelayerIncentivize.address, RelayerHub.address, GovHub.address, TokenManager.address, crossChain.address);
 
     // set maxNumOfCandidates to 20
     govChannelSeq = await crossChain.channelReceiveSequenceMap(GOV_CHANNEL_ID)
@@ -661,15 +661,15 @@ contract('BSCValidatorSet', (accounts) => {
   });
 });
 
-contract('BSCValidatorSet', (accounts) => {
+contract('FSCValidatorSet', (accounts) => {
   it('test getMiningValidators with 41 validators', async () => {
-    const validatorSetInstance = await BSCValidatorSet.deployed();
+    const validatorSetInstance = await FSCValidatorSet.deployed();
     const relayer = accounts[2];
     const relayerInstance = await RelayerHub.deployed();
     await relayerInstance.register({from: relayer, value: 1e20});
     const crossChain = await CrossChain.deployed();
     const govHub = await GovHub.deployed();
-    await govHub.updateContractAddr(BSCValidatorSet.address, SlashIndicator.address, SystemReward.address, LightClient.address, MockTokenHub.address, RelayerIncentivize.address, RelayerHub.address, GovHub.address, TokenManager.address, crossChain.address);
+    await govHub.updateContractAddr(FSCValidatorSet.address, SlashIndicator.address, SystemReward.address, LightClient.address, MockTokenHub.address, RelayerIncentivize.address, RelayerHub.address, GovHub.address, TokenManager.address, crossChain.address);
 
     let relayerAccount = accounts[8];
     let newValidators = [];
@@ -730,7 +730,7 @@ contract('BSCValidatorSet', (accounts) => {
   });
 });
 
-function jailRlpEncode(consensusAddrList,feeAddrList, bscFeeAddrList) {
+function jailRlpEncode(consensusAddrList,feeAddrList, FSCFeeAddrList) {
   let pkg = [];
   pkg.push(0x01);
   let n = consensusAddrList.length;
@@ -739,7 +739,7 @@ function jailRlpEncode(consensusAddrList,feeAddrList, bscFeeAddrList) {
     vals.push([
        consensusAddrList[i].toString(),
        feeAddrList[i].toString(),
-       bscFeeAddrList[i].toString(),
+       FSCFeeAddrList[i].toString(),
        0x0000000000000064,
     ]);
   }
@@ -747,7 +747,7 @@ function jailRlpEncode(consensusAddrList,feeAddrList, bscFeeAddrList) {
   return RLP.encode(pkg)
 }
 
-function validatorUpdateRlpEncode(consensusAddrList,feeAddrList, bscFeeAddrList) {
+function validatorUpdateRlpEncode(consensusAddrList,feeAddrList, FSCFeeAddrList) {
   let pkg = [];
   pkg.push(0x00);
   let n = consensusAddrList.length;
@@ -756,7 +756,7 @@ function validatorUpdateRlpEncode(consensusAddrList,feeAddrList, bscFeeAddrList)
     vals.push([
       consensusAddrList[i].toString(),
       feeAddrList[i].toString(),
-      bscFeeAddrList[i].toString(),
+      FSCFeeAddrList[i].toString(),
       0x0000000000000064,
     ]);
   }
