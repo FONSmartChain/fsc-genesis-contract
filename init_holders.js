@@ -1,0 +1,14 @@
+const web3 = require("web3")
+const init_holders = [
+  {
+    address: "0x44D7e3700Faa8eb357C0234B50DEaF8F46123456",
+    balance: web3.utils.toBN("26000000000000000000000000").toString("hex")
+  },
+  {
+    address: "0x0000000000000000000000000000000000001002",
+    balance: web3.utils.toBN("100000000000000000000").toString("hex")
+  }
+];
+
+
+exports = module.exports = init_holders
